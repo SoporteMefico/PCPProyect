@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using PCPProyect.Models;
 using PCPProyect.Servicio;
+using PCPProyect.ViewModel;
 
 namespace PCPProyect.Controllers
 {
@@ -19,10 +20,12 @@ namespace PCPProyect.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> ObtenerGrid([FromBody] ProyeccionFiltroVM filtro)
+        [HttpPost]
+        public async Task<IActionResult> ObtenerGrid([FromBody] ProyeccionFiltroDTVM request)
         {
-            var data = await _service.ObtenerGrid(filtro);
-            return Json(data);
+            var resultado = await _service.ObtenerGrid(request);
+
+            return Json(resultado);
         }
 
         [HttpPost]

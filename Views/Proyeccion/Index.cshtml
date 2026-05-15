@@ -42,27 +42,30 @@
             let semanasGlobal = [];
             let cambios = [];
 
+            construirTabla();
+
             // =========================================
             // BUSCAR
             // =========================================
-            $("#btnBuscar").click(function () {
+             $("#btnBuscar").click(function () {
 
-                let filtro = {
-                    fechaDesde: $("#fechaDesde").val(),
-                    fechaHasta: $("#fechaHasta").val()
-                };
+                if (!$("#fechaDesde").val() || !$("#fechaHasta").val()) {
 
-                $.ajax({
-                    url: '/Proyeccion/ObtenerGrid',
-                    method: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify(filtro),
+                    alert("Seleccione las fechas");
 
-                    success: function (data) {
+                    return;
+                }
 
-                        construirTabla(data);
-                    }
-                });
+                // si no existe -> crear tabla
+                if (!$.fn.DataTable.isDataTable('#tablaProyeccion')) {
+
+                    construirTabla();
+                }
+                else {
+
+                    // recargar
+                    tabla.ajax.reload();
+                }
             });
 
             // =========================================
@@ -112,41 +115,12 @@
                 return semanas;
             }
 
-                    // // =========================
-                    // // CREAR FOOTER DINÁMICO
-                    // // =========================
-                    // let footerRow = "<tr>";
-
-                    // // columnas fijas
-                    // footerRow += `
-                    //     <th>TOTALES</th>
-                    //     <th></th>
-                    //     <th></th>
-                    //     <th></th>
-                    //     <th></th>
-                    //     <th></th>
-                    // `;
-
-                    // // columnas dinámicas
-                    // semanasGlobal.forEach(sem => {
-
-                    //     footerRow += "<th></th>"; // cantidad
-
-                    //     footerRow += "<th></th>"; // peso
-                    // });
-
-                    // footerRow += "</tr>";
-
-                    // $("#tablaProyeccion tfoot").html(footerRow);
-
-
-
-
+                  
 
             // =========================================
             // CONSTRUIR TABLA
             // =========================================
-            function construirTabla(data) {
+            function construirTabla() {
 
                 // destruir DataTable previo
                 if ($.fn.DataTable.isDataTable('#tablaProyeccion')) {
@@ -159,11 +133,11 @@
                     $('#tablaProyeccion tfoot').html('<tr></tr>');
                 }
 
-                if (data.length === 0) {
+                // if (data.length === 0) {
 
-                    alert("No hay datos");
-                    return;
-                }
+                //     alert("No hay datos");
+                //     return;
+                // }
 
                 let desde = $("#fechaDesde").val();
                 let hasta = $("#fechaHasta").val();
@@ -245,87 +219,117 @@
                 // =========================================
                 // CREAR DATATABLE
                 // =========================================
-                tabla = $("#tablaProyeccion").DataTable({
+                        tabla = $("#tablaProyeccion").DataTable({
 
-                    data: data,
+                        processing: true,
 
-                    columns: columnas,
+                        // serverSide: true,
 
-                    scrollX: true,
+                        paging: true,
 
-                    paging: true,
+                        pageLength: 10,
 
-                    pageLength: 10,
+                        lengthMenu: [10, 25, 50, 100],
 
-                    lengthMenu: [10, 25, 50, 100],
+                        scrollX: true,
 
-                    destroy: true,
+                        destroy: true,
 
-                    deferRender: true,
+                        deferRender: true,
+                        // deferLoading: 0,
 
-                    footerCallback: function (row, data, start, end, display) {
 
-                        let api = this.api();
+                        // ajax: {
 
-                        let footer = $(api.table().footer());
+                        //     url: '/Proyeccion/ObtenerGrid',
 
-                        footer.empty();
+                        //     type: 'POST',
 
-                        let tr = $("<tr></tr>");
+                        //     contentType: 'application/json',
 
-                        // =========================================
-                        // COLUMNAS FIJAS
-                        // =========================================
-                        tr.append("<th colspan='6' class='text-end'>TOTALES:</th>");
+                        //     dataSrc: 'data',
 
-                        // =========================================
-                        // FILAS FILTRADAS
-                        // =========================================
-                        let filasFiltradas = api
-                            .rows({ search: 'applied' })
-                            .data()
-                            .toArray();
+                        //     data: function (d) {
 
-                        // =========================================
-                        // COLUMNAS SEMANA
-                        // =========================================
-                        semanasGlobal.forEach(sem => {
+                        //         d.fechaDesde = $("#fechaDesde").val();
 
-                            let totalCantidad = 0;
-                            let totalPeso = 0;
+                        //         d.fechaHasta = $("#fechaHasta").val();
 
-                            filasFiltradas.forEach(row => {
+                        //         return JSON.stringify(d);
+                        //     }
+                        // },
 
-                                let info = row.semanas[sem];
+                        columns: columnas,
 
-                                if (info) {
+                        footerCallback: function (row, data, start, end, display) {
 
-                                    totalCantidad += parseFloat(info.cantidad || 0);
+                            let api = this.api();
 
-                                    totalPeso += parseFloat(info.peso || 0);
-                                }
+                            let footer = $(api.table().footer());
+
+                            footer.empty();
+
+                            let tr = $("<tr></tr>");
+
+                            // =========================================
+                            // COLUMNAS FIJAS
+                            // =========================================
+                            tr.append("<th colspan='6' class='text-end'>TOTALES:</th>");
+
+                            // =========================================
+                            // FILAS FILTRADAS
+                            // =========================================
+                            let filasFiltradas = api
+                                .rows({ search: 'applied' })
+                                .data()
+                                .toArray();
+
+                            // =========================================
+                            // COLUMNAS SEMANA
+                            // =========================================
+                            semanasGlobal.forEach(sem => {
+
+                                let totalCantidad = 0;
+                                let totalPeso = 0;
+
+                                filasFiltradas.forEach(row => {
+
+                                    let info = row.semanas[sem];
+
+                                    if (info) {
+
+                                        totalCantidad += parseFloat(info.cantidad || 0);
+
+                                        totalPeso += parseFloat(info.peso || 0);
+                                    }
+                                });
+
+                                // total cantidad
+                                tr.append(`
+                                    <th class="text-end total-cantidad">
+                                        ${totalCantidad.toFixed(2)}
+                                    </th>
+                                `);
+
+                                // total peso
+                                tr.append(`
+                                    <th class="text-end total-peso">
+                                        ${totalPeso.toFixed(2)}
+                                    </th>
+                                `);
                             });
 
-                            // total cantidad
-                            tr.append(`
-                                <th class="text-end total-cantidad">
-                                    ${totalCantidad.toFixed(2)}
-                                </th>
-                            `);
+                            footer.append(tr);
+                        },
 
-                            // total peso
-                            tr.append(`
-                                <th class="text-end total-peso">
-                                    ${totalPeso.toFixed(2)}
-                                </th>
-                            `);
-                        });
 
-                        footer.append(tr);
-                    }
-                });
+                                drawCallback: function () {
 
-                actualizarTotales();
+                                    actualizarTotales();
+                                }
+                    });
+
+                // actualizarTotales();
             }
 
             // =========================================

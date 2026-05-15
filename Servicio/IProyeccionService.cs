@@ -9,7 +9,8 @@ namespace PCPProyect.Servicio
 {
     public interface IProyeccionService
     {
-        Task<List<ProyeccionGridVM>> ObtenerGrid(ProyeccionFiltroVM filtro);
+        //Task<List<ProyeccionGridVM>> ObtenerGrid(ProyeccionFiltroVM filtro);
+        Task<DataTableResponseVM<ProyeccionGridVM>> ObtenerGrid(ProyeccionFiltroDTVM request);
 
         Task GuardarCelda(ProyeccionUpdateDto dto);
         Task GuardarLote(List<ProyeccionUpdateDto> lista);
@@ -24,10 +25,11 @@ namespace PCPProyect.Servicio
             _context = context;
         }
 
-        public async Task<List<ProyeccionGridVM>> ObtenerGrid(ProyeccionFiltroVM filtro)
+        public async Task<DataTableResponseVM<ProyeccionGridVM>> ObtenerGrid(ProyeccionFiltroDTVM request)
         {
-            var desde = filtro.FechaDesde.Date;
-            var hasta = filtro.FechaHasta.Date;
+            var desde = DateTime.Parse(request.FechaDesde).Date;
+
+            var hasta = DateTime.Parse(request.FechaHasta).Date;
 
             // =========================
             // 1. PROYECCIONES (SQL → MEMORIA)
@@ -220,9 +222,67 @@ namespace PCPProyect.Servicio
 
                 return item;
 
-            }).ToList();
+            }).AsQueryable();
 
-            return resultado;
+
+            // =========================
+            // BUSCADOR DATATABLES
+            // =========================
+            if (!string.IsNullOrWhiteSpace(request.Search?.Value))
+            {
+                string texto = request.Search.Value.ToLower();
+
+                resultado = resultado.Where(x =>
+
+                    (x.Cliente != null &&
+                     x.Cliente.ToLower().Contains(texto))
+
+                    ||
+
+                    (x.NumDoc != null &&
+                     x.NumDoc.ToLower().Contains(texto))
+
+                    ||
+
+                    (x.CodArt != null &&
+                     x.CodArt.ToLower().Contains(texto))
+
+                    ||
+
+                    (x.DesArt != null &&
+                     x.DesArt.ToLower().Contains(texto))
+                );
+            }
+
+
+            // =========================
+            // TOTAL FILTRADO
+            // =========================
+            int totalFiltrado = resultado.Count();
+
+
+            // =========================
+            // PAGINACIÓN
+            // =========================
+            var pagina = resultado
+                .Skip(request.Start)
+                .Take(request.Length)
+                .ToList();
+
+
+            // =========================
+            // RESPONSE DATATABLE
+            // =========================
+            return new DataTableResponseVM<ProyeccionGridVM>
+            {
+                Draw = request.Draw,
+
+                RecordsTotal = datos.Count,
+
+                RecordsFiltered = totalFiltrado,
+
+                Data = pagina
+            };
         }
 
         public async Task GuardarCelda(ProyeccionUpdateDto dto)
