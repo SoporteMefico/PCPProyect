@@ -15,6 +15,7 @@ namespace PCPProyect.Datos
         public DbSet<Movdete1ot01> Movdete1ot01 { get; set; }
         public DbSet<MovHis00> MovHis00 { get; set; }
         public DbSet<Articulo> Articulo { get; set; }
+        public DbSet<VWProyeccionGrid> VWProyeccionGrid { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
