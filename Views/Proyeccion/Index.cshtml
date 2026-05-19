@@ -9,9 +9,10 @@
         </div>
         <div class="col">
             <input type="date" id="fechaHasta" class="form-control" />
+            <input type="text" id="txtBuscar" class="form-control" />
         </div>
-        <div class="col">
-            <button id="btnBuscar" class="btn btn-primary">Buscar</button>
+        <div class="col">           
+            
             <button id="btnGuardar" class="btn btn-success">Guardar cambios</button>
         </div>
 
@@ -47,22 +48,24 @@
             // =========================================
             $("#btnBuscar").click(function () {
 
-                let filtro = {
-                    fechaDesde: $("#fechaDesde").val(),
-                    fechaHasta: $("#fechaHasta").val()
-                };
+                // let filtro = {
+                //     fechaDesde: $("#fechaDesde").val(),
+                //     fechaHasta: $("#fechaHasta").val()
+                // };
 
-                $.ajax({
-                    url: '/Proyeccion/ObtenerGrid',
-                    method: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify(filtro),
+                // $.ajax({
+                //     url: '/Proyeccion/ObtenerGrid',
+                //     method: 'POST',
+                //     contentType: 'application/json',
+                //     data: JSON.stringify(filtro),
 
-                    success: function (data) {
+                //     success: function (resp) {
 
-                        construirTabla(data);
-                    }
-                });
+                //         construirTabla(resp.data);
+                //     }
+                // });
+                 
+                construirTabla();
             });
 
             // =========================================
@@ -112,221 +115,242 @@
                 return semanas;
             }
 
-                    // // =========================
-                    // // CREAR FOOTER DINÁMICO
-                    // // =========================
-                    // let footerRow = "<tr>";
-
-                    // // columnas fijas
-                    // footerRow += `
-                    //     <th>TOTALES</th>
-                    //     <th></th>
-                    //     <th></th>
-                    //     <th></th>
-                    //     <th></th>
-                    //     <th></th>
-                    // `;
-
-                    // // columnas dinámicas
-                    // semanasGlobal.forEach(sem => {
-
-                    //     footerRow += "<th></th>"; // cantidad
-
-                    //     footerRow += "<th></th>"; // peso
-                    // });
-
-                    // footerRow += "</tr>";
-
-                    // $("#tablaProyeccion tfoot").html(footerRow);
-
-
-
-
-
             // =========================================
             // CONSTRUIR TABLA
             // =========================================
-            function construirTabla(data) {
+                    function construirTabla() {
 
-                // destruir DataTable previo
-                if ($.fn.DataTable.isDataTable('#tablaProyeccion')) {
+            // =========================================
+            // DESTRUIR TABLA ANTERIOR
+            // =========================================
+            if ($.fn.DataTable.isDataTable('#tablaProyeccion')) {
 
-                    $('#tablaProyeccion').DataTable().destroy();
+                $('#tablaProyeccion').DataTable().destroy();
 
-                    $('#tablaProyeccion thead').empty();
-                    $('#tablaProyeccion tbody').empty();
-                    // $('#tablaProyeccion tfoot').empty();
-                    $('#tablaProyeccion tfoot').html('<tr></tr>');
-                }
+                $('#tablaProyeccion thead').empty();
 
-                if (data.length === 0) {
+                $('#tablaProyeccion tbody').empty();
 
-                    alert("No hay datos");
-                    return;
-                }
+                $('#tablaProyeccion tfoot').html('<tr></tr>');
+            }
 
-                let desde = $("#fechaDesde").val();
-                let hasta = $("#fechaHasta").val();
+            // =========================================
+            // GENERAR SEMANAS
+            // =========================================
+            let desde = $("#fechaDesde").val();
 
-                semanasGlobal = generarSemanas(desde, hasta);
+            let hasta = $("#fechaHasta").val();
 
-                // =========================================
-                // COLUMNAS FIJAS
-                // =========================================
-                let columnas = [
+            semanasGlobal = generarSemanas(desde, hasta);
 
-                    { title: "Cliente", data: "cliente" },
-                    { title: "Documento", data: "numDoc" },
-                    { title: "Item", data: "numIte" },
-                    { title: "Artículo", data: "codArt" },
-                    { title: "Descripción", data: "desArt" },
-                    { title: "Cantidad", data: "cantidad" }
-                ];
+            // =========================================
+            // COLUMNAS FIJAS
+            // =========================================
+            let columnas = [
 
-                // =========================================
-                // COLUMNAS DINÁMICAS
-                // =========================================
-                semanasGlobal.forEach(sem => {
+                { title: "Cliente", data: "cliente" },
 
-                    // =========================
-                    // CANTIDAD
-                    // =========================
-                    columnas.push({
+                { title: "Documento", data: "numDoc" },
 
-                        title: sem + " CANT",
+                { title: "Item", data: "numIte" },
 
-                        data: null,
+                { title: "Artículo", data: "codArt" },
 
-                        render: function (data, type, row) {
+                { title: "Descripción", data: "desArt" },
 
-                            let info = row.semanas[sem];
+                { title: "Cantidad", data: "cantidad" }
+            ];
 
-                            let cantidad = info ? info.cantidad : 0;
+            // =========================================
+            // COLUMNAS DINÁMICAS
+            // =========================================
+            semanasGlobal.forEach(sem => {
 
-                            return `
-                                <input
-                                    type="number"
-                                    class="form-control celda"
-                                    value="${cantidad}"
-                                    data-semana="${sem}"
-                                    data-coddoc="${row.codDoc}"
-                                    data-numdoc="${row.numDoc}"
-                                    data-numite="${row.numIte}"
-                                    data-peso="${row.pesoUnitario}"
-                                />
-                            `;
-                        }
-                    });
+                // =========================
+                // CANTIDAD
+                // =========================
+                columnas.push({
 
-                    // =========================
-                    // PESO
-                    // =========================
-                    columnas.push({
+                    title: sem + " CANT",
 
-                        title: sem + " PESO",
+                    data: null,
 
-                        data: null,
+                    render: function (data, type, row) {
 
-                        render: function (data, type, row) {
+                        let info = row.semanas[sem];
 
-                            let info = row.semanas[sem];
+                        let cantidad = info ? info.cantidad : 0;
 
-                            let peso = info ? info.peso : 0;
-
-                            return `
-                                <div class="text-end fw-bold peso-semana">
-                                    ${parseFloat(peso).toFixed(2)}
-                                </div>
-                            `;
-                        }
-                    });
-                });
-
-                // =========================================
-                // CREAR DATATABLE
-                // =========================================
-                tabla = $("#tablaProyeccion").DataTable({
-
-                    data: data,
-
-                    columns: columnas,
-
-                    scrollX: true,
-
-                    paging: true,
-
-                    pageLength: 10,
-
-                    lengthMenu: [10, 25, 50, 100],
-
-                    destroy: true,
-
-                    deferRender: true,
-
-                    footerCallback: function (row, data, start, end, display) {
-
-                        let api = this.api();
-
-                        let footer = $(api.table().footer());
-
-                        footer.empty();
-
-                        let tr = $("<tr></tr>");
-
-                        // =========================================
-                        // COLUMNAS FIJAS
-                        // =========================================
-                        tr.append("<th colspan='6' class='text-end'>TOTALES:</th>");
-
-                        // =========================================
-                        // FILAS FILTRADAS
-                        // =========================================
-                        let filasFiltradas = api
-                            .rows({ search: 'applied' })
-                            .data()
-                            .toArray();
-
-                        // =========================================
-                        // COLUMNAS SEMANA
-                        // =========================================
-                        semanasGlobal.forEach(sem => {
-
-                            let totalCantidad = 0;
-                            let totalPeso = 0;
-
-                            filasFiltradas.forEach(row => {
-
-                                let info = row.semanas[sem];
-
-                                if (info) {
-
-                                    totalCantidad += parseFloat(info.cantidad || 0);
-
-                                    totalPeso += parseFloat(info.peso || 0);
-                                }
-                            });
-
-                            // total cantidad
-                            tr.append(`
-                                <th class="text-end total-cantidad">
-                                    ${totalCantidad.toFixed(2)}
-                                </th>
-                            `);
-
-                            // total peso
-                            tr.append(`
-                                <th class="text-end total-peso">
-                                    ${totalPeso.toFixed(2)}
-                                </th>
-                            `);
-                        });
-
-                        footer.append(tr);
+                        return `
+                            <input
+                                type="number"
+                                class="form-control celda"
+                                value="${cantidad}"
+                                data-semana="${sem}"
+                                data-coddoc="${row.codDoc}"
+                                data-numdoc="${row.numDoc}"
+                                data-numite="${row.numIte}"
+                                data-peso="${row.pesoUnitario}"
+                            />
+                        `;
                     }
                 });
 
-                actualizarTotales();
-            }
+                // =========================
+                // PESO
+                // =========================
+                columnas.push({
+
+                    title: sem + " PESO",
+
+                    data: null,
+
+                    render: function (data, type, row) {
+
+                        let info = row.semanas[sem];
+
+                        let peso = info ? info.peso : 0;
+
+                        return `
+                            <div class="text-end fw-bold peso-semana">
+                                ${parseFloat(peso).toFixed(2)}
+                            </div>
+                        `;
+                    }
+                });
+            });
+
+            // =========================================
+            // CREAR DATATABLE
+            // =========================================
+            tabla = $("#tablaProyeccion").DataTable({
+
+                processing: true,
+
+                serverSide: true,
+
+                searching: true,
+
+                paging: true,
+
+                pageLength: 50,
+
+                lengthMenu: [10, 25, 50, 100],
+
+                scrollX: true,
+
+                destroy: true,
+
+                deferRender: true,
+
+                ajax: function (dtParams, callback, settings) {
+
+                    let page =
+                        (dtParams.start / dtParams.length) + 1;
+
+                    let filtro = {
+
+                        fechaDesde: $("#fechaDesde").val(),
+
+                        fechaHasta: $("#fechaHasta").val(),
+
+                        page: page,
+
+                        pageSize: dtParams.length,
+
+                        buscar: dtParams.search.value
+                    };
+
+                    $.ajax({
+
+                        url: '/Proyeccion/ObtenerGrid',
+
+                        method: 'POST',
+
+                        contentType: 'application/json',
+
+                        data: JSON.stringify(filtro),
+
+                        success: function (resp) {
+
+                            callback({
+
+                                draw: dtParams.draw,
+
+                                recordsTotal: resp.total,
+
+                                recordsFiltered: resp.total,
+
+                                data: resp.data
+                            });
+                        },
+
+                        error: function (xhr) {
+
+                            console.log(xhr);
+
+                            alert("Error cargando datos");
+                        }
+                    });
+                },
+
+                columns: columnas,
+
+                footerCallback: function (row, data, start, end, display) {
+
+                    let api = this.api();
+
+                    let footer = $(api.table().footer());
+
+                    footer.empty();
+
+                    let tr = $("<tr></tr>");
+
+                    // =========================================
+                    // COLUMNAS FIJAS
+                    // =========================================
+                    tr.append("<th colspan='6' class='text-end'>TOTALES:</th>");
+
+                    // =========================================
+                    // COLUMNAS SEMANAS
+                    // =========================================
+                    semanasGlobal.forEach(sem => {
+
+                        let totalCantidad = 0;
+
+                        let totalPeso = 0;
+
+                        data.forEach(row => {
+
+                            let info = row.semanas[sem];
+
+                            if (info) {
+
+                                totalCantidad +=
+                                    parseFloat(info.cantidad || 0);
+
+                                totalPeso +=
+                                    parseFloat(info.peso || 0);
+                            }
+                        });
+
+                        tr.append(`
+                            <th class="text-end">
+                                ${totalCantidad.toFixed(2)}
+                            </th>
+                        `);
+
+                        tr.append(`
+                            <th class="text-end">
+                                ${totalPeso.toFixed(2)}
+                            </th>
+                        `);
+                    });
+
+                    footer.append(tr);
+                }
+            });
+        }
 
             // =========================================
             // ACTUALIZAR TOTALES

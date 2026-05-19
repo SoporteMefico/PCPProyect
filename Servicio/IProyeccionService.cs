@@ -9,7 +9,8 @@ namespace PCPProyect.Servicio
 {
     public interface IProyeccionService
     {
-        Task<List<ProyeccionGridVM>> ObtenerGrid(ProyeccionFiltroVM filtro);
+        //Task<List<ProyeccionGridVM>> ObtenerGrid(ProyeccionFiltroVM filtro);
+        Task<PagedResultVM<ProyeccionGridVM>> ObtenerGrid(ProyeccionFiltroVM filtro);
 
         Task GuardarCelda(ProyeccionUpdateDto dto);
         Task GuardarLote(List<ProyeccionUpdateDto> lista);
@@ -24,156 +25,154 @@ namespace PCPProyect.Servicio
             _context = context;
         }
 
-        public async Task<List<ProyeccionGridVM>> ObtenerGrid(ProyeccionFiltroVM filtro)
+        public async Task<PagedResultVM<ProyeccionGridVM>> ObtenerGrid(ProyeccionFiltroVM filtro)
         {
             var desde = filtro.FechaDesde.Date;
             var hasta = filtro.FechaHasta.Date;
 
-            // =========================
-            // 1. PROYECCIONES (SQL → MEMORIA)
-            // =========================
+            // =========================================
+            // VALIDAR PAGINACIÓN
+            // =========================================
+            if (filtro.Page <= 0)
+                filtro.Page = 1;
+
+            if (filtro.PageSize <= 0)
+                filtro.PageSize = 50;
+
+            // =========================================
+            // 1. PROYECCIONES
+            // =========================================
             var dataProy = await _context.MovHis00
-                .Where(x => x.FecIniPro.HasValue &&
-                            x.FecIniPro.Value.Date >= desde &&
-                            x.FecIniPro.Value.Date <= hasta)
+
+                .AsNoTracking()
+
+                .Where(x =>
+                    x.FecIniPro.HasValue &&
+                    x.FecIniPro.Value.Date >= desde &&
+                    x.FecIniPro.Value.Date <= hasta)
+
                 .Select(x => new
                 {
                     CodDoc = x.CodDoc.Trim(),
                     NumDoc = x.NumDoc.Trim(),
                     NumIte = x.NumIte.Trim(),
+
                     Fecha = x.FecIniPro.Value,
+
                     Cantidad = x.CantidadProyectada ?? 0
                 })
+
                 .ToListAsync();
 
-            // Agrupar por semana (en memoria)
+            // =========================================
+            // 2. AGRUPAR SEMANAS
+            // =========================================
             var proyecciones = dataProy
+
                 .Select(x => new
                 {
                     x.CodDoc,
                     x.NumDoc,
                     x.NumIte,
+
                     Anio = ISOWeek.GetYear(x.Fecha),
+
                     Semana = ISOWeek.GetWeekOfYear(x.Fecha),
+
                     x.Cantidad
                 })
-                .GroupBy(x => new { x.CodDoc, x.NumDoc, x.NumIte, x.Anio, x.Semana })
+
+                .GroupBy(x => new
+                {
+                    x.CodDoc,
+                    x.NumDoc,
+                    x.NumIte,
+                    x.Anio,
+                    x.Semana
+                })
+
                 .Select(g => new
                 {
                     g.Key.CodDoc,
                     g.Key.NumDoc,
                     g.Key.NumIte,
+
                     KeySemana = $"{g.Key.Anio}-W{g.Key.Semana}",
+
                     Cantidad = g.Sum(x => x.Cantidad)
                 })
+
                 .ToList();
 
-            // =========================
-            // 2. LISTA DE SEMANAS
-            // =========================
+            // =========================================
+            // 3. LISTA SEMANAS
+            // =========================================
             var semanas = proyecciones
+
                 .Select(x => x.KeySemana)
+
                 .Distinct()
+
                 .OrderBy(x => x)
+
                 .ToList();
 
-            // =========================
-            // 3. CABECERA
-            // =========================
-            var cabeceras = await _context.Movcabe1ot01
-                .Where(x => x.XEstDoc != "A")
+            // =========================================
+            // 4. QUERY BASE
+            // =========================================
+            var query = _context.VWProyeccionGrid
+
+                .AsNoTracking();
+
+            if (!string.IsNullOrWhiteSpace(filtro.Buscar))
+            {
+                var buscar = filtro.Buscar.Trim();
+
+                query = query.Where(x =>
+
+                    x.NumDoc.Contains(buscar) ||
+
+                    x.Cliente.Contains(buscar) ||
+
+                    x.CodArt.Contains(buscar) ||
+
+                    x.DesArt.Contains(buscar)
+                );
+            }
+            // =========================================
+            // 5. TOTAL REGISTROS
+            // =========================================
+            var total = await query.CountAsync();
+
+            // =========================================
+            // 6. PAGINACIÓN SQL
+            // =========================================
+            var datos = await query
+
+                .OrderBy(x => x.NumDoc)
+
+                .Skip((filtro.Page - 1) * filtro.PageSize)
+
+                .Take(filtro.PageSize)
                 .Select(x => new
                 {
                     CodDoc = x.CodDoc.Trim(),
                     NumDoc = x.NumDoc.Trim(),
-                    Cliente = x.NomAne
+                    NumIte = x.NumIte.Trim(),
+
+                    Cliente = x.Cliente,
+                    CodArt = x.CodArt,
+                    DesArt = x.DesArt,
+
+                    Cantot = x.Cantot,
+                    PesoUnitario = x.PesoUnitario
                 })
+
                 .ToListAsync();
 
-            // =========================
-            // 4. DETALLE
-            // =========================
-            //var detalles = await _context.Movdete1ot01
-            //    .Select(x => new
-            //    {
-            //        CodDoc = x.CodDoc.Trim(),
-            //        NumDoc = x.NumDoc.Trim(),
-            //        NumIte = x.NumIte.Trim(),
-
-            //        x.CodArt,
-            //        x.DesArt,
-            //        x.CanTot
-            //    }).Where(x => x.NumIte == "01")
-            //    .ToListAsync();
-            var detalles = await (
-    from a in _context.Movcabe1ot01
-
-    join b in _context.Movdete1ot01
-        on new { a.CodDoc, a.NumDoc }
-        equals new { b.CodDoc, b.NumDoc }
-
-    join c in _context.Articulo
-        on new
-        {
-            CodSubAlm = b.CodSubAlm.Trim(),
-            CodArt = b.CodArt.Trim()
-        }
-        equals new
-        {
-            CodSubAlm = c.CodSubAlm.Trim(),
-            CodArt = c.CodArt.Trim()
-        }
-        into artJoin
-
-    from c in artJoin.DefaultIfEmpty()
-
-    where a.XEstDoc != "A"
-          && b.NumIte == "01"
-
-    select new
-    {
-        CodDoc = b.CodDoc.Trim(),
-        NumDoc = b.NumDoc.Trim(),
-        NumIte = b.NumIte.Trim(),
-
-        CodArt = b.CodArt,
-        DesArt = b.DesArt,
-
-        CanTot = b.CanTot,
-
-        PesoUnitario = c != null
-            ? c.PesArt
-            : 0
-    }
-).ToListAsync();
-
-            // =========================
-            // 5. JOIN EN MEMORIA
-            // =========================
-            var datos = (
-                from det in detalles
-                join cab in cabeceras
-                    on new { det.CodDoc, det.NumDoc }
-                    equals new { cab.CodDoc, cab.NumDoc }
-
-                select new
-                {
-                    det.CodDoc,
-                    det.NumDoc,
-                    det.NumIte,
-
-                    cab.Cliente,
-
-                    det.CodArt,
-                    det.DesArt,
-                    det.CanTot,
-                    det.PesoUnitario
-                }
-            ).ToList();
-
-            // =========================
-            // 6. ARMAR GRID FINAL
-            // =========================
+            // =========================================
+            // 7. ARMAR GRID
+            // =========================================
             var resultado = datos.Select(d =>
             {
                 var item = new ProyeccionGridVM
@@ -181,16 +180,21 @@ namespace PCPProyect.Servicio
                     CodDoc = d.CodDoc,
                     NumDoc = d.NumDoc,
                     NumIte = d.NumIte,
+
                     Cliente = d.Cliente,
+
                     CodArt = d.CodArt,
+
                     DesArt = d.DesArt,
-                    Cantidad = d.CanTot,
+
+                    Cantidad = d.Cantot,
+
                     PesoUnitario = d.PesoUnitario
                 };
 
-                // =========================
-                // Inicializar semanas
-                // =========================
+                // =====================================
+                // INICIALIZAR SEMANAS
+                // =====================================
                 foreach (var s in semanas)
                 {
                     item.Semanas[s] = new SemanaDataVM
@@ -200,13 +204,13 @@ namespace PCPProyect.Servicio
                     };
                 }
 
-                // =========================
-                // Proyecciones del item
-                // =========================
+                // =====================================
+                // PROYECCIONES DEL ITEM
+                // =====================================
                 var proyItem = proyecciones
                     .Where(p =>
-                        p.CodDoc == d.CodDoc &&
-                        p.NumDoc == d.NumDoc &&
+                        p.CodDoc.Trim() == d.CodDoc.Trim() &&
+                        p.NumDoc.Trim() == d.NumDoc.Trim() &&
                         p.NumIte == d.NumIte);
 
                 foreach (var p in proyItem)
@@ -214,6 +218,7 @@ namespace PCPProyect.Servicio
                     item.Semanas[p.KeySemana] = new SemanaDataVM
                     {
                         Cantidad = p.Cantidad,
+
                         Peso = p.Cantidad * d.PesoUnitario
                     };
                 }
@@ -222,7 +227,15 @@ namespace PCPProyect.Servicio
 
             }).ToList();
 
-            return resultado;
+            // =========================================
+            // 8. RETORNO PAGINADO
+            // =========================================
+            return new PagedResultVM<ProyeccionGridVM>
+            {
+                Total = total,
+
+                Data = resultado
+            };
         }
 
         public async Task GuardarCelda(ProyeccionUpdateDto dto)

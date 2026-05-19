@@ -55,12 +55,16 @@ namespace PCPProyect.Datos
 
 
             modelBuilder.Entity<Articulo>()
-    .HasKey(x => new
-    {
-        x.CodEmp,
-        x.CodSubAlm,
-        x.CodArt
-    });
+                .HasKey(x => new
+                {
+                    x.CodEmp,
+                    x.CodSubAlm,
+                    x.CodArt
+                });
+
+            modelBuilder.Entity<VWProyeccionGrid>()
+            .HasNoKey()
+            .ToView("VW_PROYECCION_GRID");
         }
     }
 }

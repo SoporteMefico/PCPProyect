@@ -1,4 +1,6 @@
-﻿namespace PCPProyect.Models
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace PCPProyect.Models
 {
     public class VWProyeccionGrid
     {
@@ -13,17 +15,10 @@
         public string CodArt { get; set; }
 
         public string DesArt { get; set; }
-
+        [Column("Cantidad")]
         public decimal Cantot { get; set; }
-
+        [Column("PesoUnitario")]
         public decimal PesoUnitario { get; set; }
 
-        public DateTime? FecIniPro { get; set; }
-
-        public int Semana { get; set; }
-
-        public int Anio { get; set; }
-
-        public decimal CantidadProyectada { get; set; }
     }
 }
