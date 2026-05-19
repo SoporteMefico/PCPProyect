@@ -11,8 +11,8 @@
             <input type="date" id="fechaHasta" class="form-control" />
             <input type="text" id="txtBuscar" class="form-control" />
         </div>
-        <div class="col">           
-            
+        <div class="col">
+
             <button id="btnGuardar" class="btn btn-success">Guardar cambios</button>
         </div>
 
@@ -48,23 +48,7 @@
             // =========================================
             $("#btnBuscar").click(function () {
 
-                // let filtro = {
-                //     fechaDesde: $("#fechaDesde").val(),
-                //     fechaHasta: $("#fechaHasta").val()
-                // };
 
-                // $.ajax({
-                //     url: '/Proyeccion/ObtenerGrid',
-                //     method: 'POST',
-                //     contentType: 'application/json',
-                //     data: JSON.stringify(filtro),
-
-                //     success: function (resp) {
-
-                //         construirTabla(resp.data);
-                //     }
-                // });
-                 
                 construirTabla();
             });
 
@@ -181,18 +165,18 @@
 
                         let cantidad = info ? info.cantidad : 0;
 
-                        return `
-                            <input
-                                type="number"
-                                class="form-control celda"
-                                value="${cantidad}"
-                                data-semana="${sem}"
-                                data-coddoc="${row.codDoc}"
-                                data-numdoc="${row.numDoc}"
-                                data-numite="${row.numIte}"
-                                data-peso="${row.pesoUnitario}"
-                            />
-                        `;
+                                return `
+                                    <div
+                                        class="celda-editable"
+                                        data-semana="${sem}"
+                                        data-coddoc="${row.codDoc}"
+                                        data-numdoc="${row.numDoc}"
+                                        data-numite="${row.numIte}"
+                                        data-peso="${row.pesoUnitario}"
+                                    >
+                                        ${cantidad}
+                                    </div>
+                                `;
                     }
                 });
 
@@ -489,5 +473,130 @@
 
         });
 
+
+                $(document).on("dblclick", ".celda-editable", function () {
+
+            let div = $(this);
+
+            // evitar duplicar input
+            if (div.find("input").length > 0)
+                return;
+
+            let valor = div.text().trim();
+
+            let input = $(`
+                <input
+                    type="number"
+                    class="form-control input-edicion"
+                    value="${valor}"
+                />
+            `);
+
+            div.html(input);
+
+            input.focus();
+
+            input.select();
+        });
+
+
+                $(document).on("blur", ".input-edicion", function () {
+
+            let input = $(this);
+
+            let nuevoValor =
+                parseFloat(input.val()) || 0;
+
+            let div = input.parent();
+
+            let pesoUnitario =
+                parseFloat(div.data("peso")) || 0;
+
+            // volver a texto
+            div.html(nuevoValor);
+
+            // actualizar peso
+            let tdCantidad = div.closest("td");
+
+            let tdPeso = tdCantidad.next();
+
+            tdPeso.find(".peso-semana")
+                .html((nuevoValor * pesoUnitario).toFixed(2));
+
+            actualizarTotales();
+
+            let semanaStr = div.data("semana");
+
+            let partes = semanaStr.split("-W");
+
+            let item = {
+
+                codDoc: div.data("coddoc"),
+
+                numDoc: div.data("numdoc"),
+
+                numIte: div.data("numite"),
+
+                anio: parseInt(partes[0]),
+
+                semana: parseInt(partes[1]),
+
+                cantidad: nuevoValor
+            };
+
+            cambios.push(item);
+
+            div.css("background-color", "#fff3cd");
+        });
+
+
+                $(document).on("blur", ".input-edicion", function () {
+
+            let input = $(this);
+
+            let nuevoValor =
+                parseFloat(input.val()) || 0;
+
+            let div = input.parent();
+
+            let pesoUnitario =
+                parseFloat(div.data("peso")) || 0;
+
+            // volver a texto
+            div.html(nuevoValor);
+
+            // actualizar peso
+            let tdCantidad = div.closest("td");
+
+            let tdPeso = tdCantidad.next();
+
+            tdPeso.find(".peso-semana")
+                .html((nuevoValor * pesoUnitario).toFixed(2));
+
+            actualizarTotales();
+
+            let semanaStr = div.data("semana");
+
+            let partes = semanaStr.split("-W");
+
+            let item = {
+
+                codDoc: div.data("coddoc"),
+
+                numDoc: div.data("numdoc"),
+
+                numIte: div.data("numite"),
+
+                anio: parseInt(partes[0]),
+
+                semana: parseInt(partes[1]),
+
+                cantidad: nuevoValor
+            };
+
+            cambios.push(item);
+
+            div.css("background-color", "#fff3cd");
+        });
     </script>
 }
