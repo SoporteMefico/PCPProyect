@@ -315,6 +315,11 @@
                         actualizarTotales();
                     }
                 });
+
+                tabla.on('draw', function () {
+
+                    actualizarTotales();
+                });
             }
 
             // =========================================
@@ -361,6 +366,8 @@
 
                 // volver a texto
                 div.html(nuevoValor);
+                //para recalcular Footer
+                actualizarTotales();
 
                 // actualizar peso
                 let tdCantidad = div.closest("td");
@@ -397,52 +404,53 @@
                 // =========================================
                 // ACTUALIZAR TOTALES
                 // =========================================
-                function actualizarTotales() {
+                                  function actualizarTotales() {
 
-                    let tablaApi = $('#tablaProyeccion').DataTable();
+            let api = tabla;
 
-                    let footer = $(tablaApi.table().footer());
+            let footer = $(api.table().footer());
 
-                    let ths = footer.find("th");
+            let ths = footer.find("th");
 
-                    let indexFooter = 1;
+            let indexFooter = 1;
 
-                    semanasGlobal.forEach(sem => {
+            semanasGlobal.forEach(sem => {
 
-                        let totalCantidad = 0;
+                let totalCantidad = 0;
 
-                        let totalPeso = 0;
+                let totalPeso = 0;
 
-                        $("#tablaProyeccion tbody tr").each(function () {
+                // SOLO FILAS VISIBLES/FILTRADAS
+                api.rows({ search: 'applied' }).every(function () {
 
-                            let fila = $(this);
+                    let rowNode = this.node();
 
-                            let celda =
-                                fila.find(`.celda-editable[data-semana='${sem}']`);
+                    let celda =
+                        $(rowNode).find(`.celda-editable[data-semana='${sem}']`);
 
-                            if (celda.length > 0) {
+                    if (celda.length > 0) {
 
-                                let cantidad =
-                                    parseFloat(celda.text().trim()) || 0;
+                        let cantidad =
+                            parseFloat(celda.text().trim()) || 0;
 
-                                let pesoUnitario =
-                                    parseFloat(celda.data("peso")) || 0;
+                        let pesoUnitario =
+                            parseFloat(celda.data("peso")) || 0;
 
-                                totalCantidad += cantidad;
+                        totalCantidad += cantidad;
 
-                                totalPeso += cantidad * pesoUnitario;
-                            }
-                        });
+                        totalPeso += cantidad * pesoUnitario;
+                    }
+                });
 
-                        $(ths[indexFooter])
-                            .html(totalCantidad.toFixed(2));
+                $(ths[indexFooter])
+                    .text(totalCantidad.toFixed(2));
 
-                        $(ths[indexFooter + 1])
-                            .html(totalPeso.toFixed(2));
+                $(ths[indexFooter + 1])
+                    .text(totalPeso.toFixed(2));
 
-                        indexFooter += 2;
-                    });
-                }
+                indexFooter += 2;
+                });
+            }
 
             // =========================================
             // GUARDAR CAMBIOS
