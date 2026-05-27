@@ -1,4 +1,5 @@
 ﻿<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
+<link rel="stylesheet" href="~/css/proyeccion.css"/>
 
 <div class="container mt-4">
     <h4>Proyección por Semanas</h4>
@@ -31,6 +32,7 @@
 
     <!-- DataTables -->
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/fixedcolumns/4.3.0/js/dataTables.fixedColumns.min.js"></script>
 
     <script>
 
@@ -104,6 +106,7 @@
                 if ($.fn.DataTable.isDataTable('#tablaProyeccion')) {
 
                     $('#tablaProyeccion').DataTable().destroy();
+                    
 
                     $('#tablaProyeccion thead').empty();
 
@@ -123,13 +126,13 @@
                 // =========================================
                 let columnas = [
 
-                    { title: "Cliente", data: "cliente" },
+                    { title: "Cliente", data: "cliente", width: "220px" },
 
-                    { title: "Documento", data: "numDoc" },
+                    { title: "Documento", data: "numDoc", width:"120px" },
 
-                    { title: "Item", data: "numIte" },
+                    { title: "Item", data: "numIte",width:"90px" },
 
-                    { title: "Artículo", data: "codArt" },
+                    { title: "Artículo", data: "codArt", width:"200px" },
 
                     { title: "Descripción", data: "desArt" },
 
@@ -204,11 +207,17 @@
 
                     paging: true,
 
-                    pageLength: 50,
+                    pageLength: 10,
+                    autoWidth: false,
 
                     lengthMenu: [10, 25, 50, 100],
 
                     scrollX: true,
+                    //Para fijar columnas
+                    scrollCollapse: true,
+                    fixedColumns: {
+                        leftColumns:4
+                    },
 
                     destroy: true,
 

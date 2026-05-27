@@ -1,0 +1,43 @@
+﻿
+
+th, td {
+    white-space: nowrap;
+}
+
+div.dataTables_wrapper {
+    width: 100%;
+}
+
+/* Fondo sólido columnas congeladas */
+.dtfc-fixed-left {
+    background-color: white !important;
+}
+
+    /* Header congelado */
+    .dtfc-fixed-left thead th {
+        background-color: #f8f9fa !important;
+        z-index: 3;
+    }
+
+    /* Body congelado */
+    .dtfc-fixed-left tbody td {
+        background-color: white !important;
+        z-index: 2;
+    }
+
+    /* Footer congelado */
+    .dtfc-fixed-left tfoot th {
+        background-color: #f8f9fa !important;
+        z-index: 3;
+    }
+
+/* Evita que otras columnas pasen encima */
+.DTFC_LeftWrapper {
+    z-index: 10 !important;
+}
+
+.DTFC_LeftBodyWrapper {
+    z-index: 10 !important;
+    background-color: white !important;
+}
+

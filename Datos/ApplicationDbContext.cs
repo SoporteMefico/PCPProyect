@@ -16,6 +16,8 @@ namespace PCPProyect.Datos
         public DbSet<MovHis00> MovHis00 { get; set; }
         public DbSet<Articulo> Articulo { get; set; }
         public DbSet<VWProyeccionGrid> VWProyeccionGrid { get; set; }
+        public DbSet<VW_PCP_CONTROL> VW_PCP_CONTROL { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -65,6 +67,10 @@ namespace PCPProyect.Datos
             modelBuilder.Entity<VWProyeccionGrid>()
             .HasNoKey()
             .ToView("VW_PROYECCION_GRID");
+
+            modelBuilder.Entity<VW_PCP_CONTROL>()
+            .HasNoKey()
+            .ToView("VW_PCP_CONTROL");
         }
     }
 }

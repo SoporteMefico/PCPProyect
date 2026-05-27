@@ -1,0 +1,357 @@
+﻿<link rel="stylesheet"
+      href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
+
+<div class="container-fluid mt-3">
+
+    <h3>CONTROL PCP</h3>
+
+    <!-- FILTROS -->
+    <div class="row mb-3">
+
+        <div class="col-md-2">
+            <label>Desde</label>
+            <input type="date"
+                   id="fechaDesde"
+                   class="form-control" />
+        </div>
+
+        <div class="col-md-2">
+            <label>Hasta</label>
+            <input type="date"
+                   id="fechaHasta"
+                   class="form-control" />
+        </div>
+
+        <div class="col-md-2">
+            <label>Estado OT</label>
+
+            <select id="estadoOT"
+                    class="form-control">
+
+                <option value="">TODOS</option>
+
+                <option>NO INICIADO</option>
+
+                <option>EN PRODUCCION</option>
+
+                <option>FABRICADO</option>
+            </select>
+        </div>
+
+        <div class="col-md-2">
+            <label>Estado PCP</label>
+
+            <select id="estadoPCP"
+                    class="form-control">
+
+                <option value="">TODOS</option>
+
+                <option>SIN PROGRAMAR</option>
+
+                <option>PARCIAL</option>
+
+                <option>PROGRAMADO</option>
+            </select>
+        </div>
+
+        <div class="col-md-2">
+            <label>Atrasados</label>
+
+            <select id="atrasado"
+                    class="form-control">
+
+                <option value="">TODOS</option>
+
+                <option value="true">SI</option>
+
+                <option value="false">NO</option>
+            </select>
+        </div>
+
+        <div class="col-md-2 d-flex align-items-end">
+
+            <button id="btnBuscar"
+                    class="btn btn-primary w-100">
+
+                Buscar
+            </button>
+        </div>
+    </div>
+
+    <!-- TABLA -->
+    <table id="tablaPCP"
+           class="display nowrap"
+           style="width:100%">
+
+        <thead></thead>
+
+        <tbody></tbody>
+    </table>
+</div>
+
+@section Scripts {
+
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+    <script>
+
+        let tabla;
+
+                $(document).ready(function () {
+
+            $("#btnBuscar").click(function () {
+
+                if ($.fn.DataTable.isDataTable('#tablaPCP')) {
+
+                    tabla.ajax.reload();
+                }
+                else {
+
+                    construirTabla();
+                }
+            });
+        });
+
+        // =====================================
+        // TABLA
+        // =====================================
+        function construirTabla() {
+
+            tabla = $("#tablaPCP").DataTable({
+
+                processing: true,
+
+                serverSide: true,
+
+                searching: true,
+
+                paging: true,
+
+                pageLength: 10,
+
+                scrollX: true,
+
+                ajax: function (dtParams, callback) {
+
+                    let filtro = {
+
+                        fechaDesde:
+                            $("#fechaDesde").val(),
+
+                        fechaHasta:
+                            $("#fechaHasta").val(),
+
+                        estadoOT:
+                            $("#estadoOT").val(),
+
+                        estadoPCP:
+                            $("#estadoPCP").val(),
+
+                        atrasado:
+                            $("#atrasado").val(),
+
+                        buscar:
+                            dtParams.search.value,
+
+                        page:
+                            (dtParams.start / dtParams.length) + 1,
+
+                        pageSize:
+                            dtParams.length
+                    };
+
+                    $.ajax({
+
+                        url: '/PCPControl/ObtenerGrid',
+
+                        method: 'POST',
+
+                        contentType: 'application/json',
+
+                        data: JSON.stringify(filtro),
+
+                        success: function (resp) {
+
+                            callback({
+
+                                draw: dtParams.draw,
+
+                                recordsTotal: resp.total,
+
+                                recordsFiltered: resp.total,
+
+                                data: resp.data
+                            });
+                        }
+                    });
+                },
+
+                columns: [
+
+                    {
+                        title: "Documento",
+                        data: "numDoc"
+                    },
+
+                    {
+                        title: "Cliente",
+                        data: "cliente"
+                    },
+
+                    {
+                        title: "Pedido",
+                        data: "pedido"
+                    },
+
+                    {
+                        title: "Artículo",
+                        data: "codArt"
+                    },
+
+                    {
+                        title: "Descripción",
+                        data: "desArt"
+                    },
+
+                    {
+                        title: "Cantidad",
+                        data: "cantidad"
+                    },
+
+                    {
+                        title: "F. Entrega",
+                        data: "fechaEntrega",
+
+                        render: function (data) {
+
+                            if (!data)
+                                return "";
+
+                            return moment(data)
+                                .format("DD/MM/YYYY");
+                        }
+                    },
+
+                    {
+                        title: "% Prog.",
+
+                        data: "porcentajeProgramado",
+
+                        render: function (data) {
+
+                            return `
+                                <div class="text-end">
+                                    ${parseFloat(data).toFixed(1)} %
+                                </div>
+                            `;
+                        }
+                    },
+
+                    {
+                        title: "% Cumpl.",
+
+                        data: "porcentajeCumplimiento",
+
+                        render: function (data) {
+
+                            return `
+                                <div class="text-end">
+                                    ${parseFloat(data).toFixed(1)} %
+                                </div>
+                            `;
+                        }
+                    },
+
+                    {
+                        title: "Estado PCP",
+
+                        data: "estadoPCP",
+
+                        render: function (data) {
+
+                            let clase = "";
+
+                            if (data === "PROGRAMADO")
+                                clase = "bg-success";
+
+                            else if (data === "PARCIAL")
+                                clase = "bg-warning";
+
+                            else
+                                clase = "bg-secondary";
+
+                            return `
+                                <span class="badge ${clase}">
+                                    ${data}
+                                </span>
+                            `;
+                        }
+                    },
+
+                    {
+                        title: "Estado OT",
+
+                        data: "estadoOT",
+
+                        render: function (data) {
+
+                            let clase = "";
+
+                            if (data === "FABRICADO")
+                                clase = "bg-success";
+
+                            else if (data === "EN PRODUCCION")
+                                clase = "bg-primary";
+
+                            else
+                                clase = "bg-secondary";
+
+                            return `
+                                <span class="badge ${clase}">
+                                    ${data}
+                                </span>
+                            `;
+                        }
+                    },
+
+                    {
+                        title: "Atrasado",
+
+                        data: "atrasado",
+
+                        render: function (data) {
+
+                            if (data) {
+
+                                return `
+                                    <span class="badge bg-danger">
+                                        SI
+                                    </span>
+                                `;
+                            }
+
+                            return `
+                                <span class="badge bg-success">
+                                    NO
+                                </span>
+                            `;
+                        }
+                    }
+                ],
+
+                createdRow: function (row, data) {
+
+                    // fila atrasada
+                    if (data.atrasado) {
+
+                        $(row).css(
+                            "background-color",
+                            "#ffe5e5"
+                        );
+                    }
+                }
+            });
+        }
+
+    </script>
+}
