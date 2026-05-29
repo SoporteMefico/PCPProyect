@@ -19,6 +19,7 @@ namespace PCPProyect.Models
         public decimal Cantot { get; set; }
         [Column("PesoUnitario")]
         public decimal PesoUnitario { get; set; }
+        public decimal SaldoPP01 { get; set; }
 
     }
 }

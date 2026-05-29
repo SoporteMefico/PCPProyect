@@ -1,43 +1,41 @@
-﻿
-
-th, td {
+﻿th,
+td {
     white-space: nowrap;
 }
 
-div.dataTables_wrapper {
-    width: 100%;
-}
-
-/* Fondo sólido columnas congeladas */
-.dtfc-fixed-left {
+/* Fondo real columnas congeladas */
+.dtfc-fixed-left,
+.dtfc-fixed-start {
     background-color: white !important;
 }
 
-    /* Header congelado */
-    .dtfc-fixed-left thead th {
-        background-color: #f8f9fa !important;
-        z-index: 3;
-    }
-
-    /* Body congelado */
-    .dtfc-fixed-left tbody td {
+    .dtfc-fixed-left table,
+    .dtfc-fixed-start table {
         background-color: white !important;
-        z-index: 2;
     }
 
-    /* Footer congelado */
-    .dtfc-fixed-left tfoot th {
-        background-color: #f8f9fa !important;
-        z-index: 3;
+    /* Header */
+    .dtfc-fixed-left thead th,
+    .dtfc-fixed-start thead th {
+        background: #f8f9fa !important;
+        z-index: 3 !important;
     }
 
-/* Evita que otras columnas pasen encima */
-.DTFC_LeftWrapper {
-    z-index: 10 !important;
-}
+    /* Body */
+    .dtfc-fixed-left tbody td,
+    .dtfc-fixed-start tbody td {
+        background: white !important;
+    }
 
-.DTFC_LeftBodyWrapper {
-    z-index: 10 !important;
-    background-color: white !important;
+    /* Footer */
+    .dtfc-fixed-left tfoot th,
+    .dtfc-fixed-start tfoot th {
+        background: #f8f9fa !important;
+    }
+
+/* Sombra separación */
+.dtfc-fixed-left,
+.dtfc-fixed-start {
+    box-shadow: 2px 0 5px rgba(0,0,0,.10);
 }
 

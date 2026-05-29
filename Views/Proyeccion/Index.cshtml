@@ -1,7 +1,10 @@
 ﻿<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
+<link rel="stylesheet"
+      href="https://cdn.datatables.net/fixedcolumns/4.3.0/css/fixedColumns.dataTables.min.css" />
+
 <link rel="stylesheet" href="~/css/proyeccion.css"/>
 
-<div class="container mt-4">
+<div class="container-fluid">
     <h4>Proyección por Semanas</h4>
 
     <div class="row mb-3">
@@ -18,8 +21,20 @@
         </div>
 
     </div>
+    <div class="col-md-2">
 
-    <table id="tablaProyeccion" class="display nowrap" style="width:100%">
+        <label>Saldo PP01 Mayor a</label>
+
+        <input type="number"
+               id="saldoPP01Minimo"
+               class="form-control"
+               value="0" />
+
+    </div>
+
+   
+
+    <table id="tablaProyeccion" class="table table-bordered table-sm w-100" style="width:100%">
         <thead></thead>
         <tbody></tbody>
         <tfoot>
@@ -33,6 +48,7 @@
     <!-- DataTables -->
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/fixedcolumns/4.3.0/js/dataTables.fixedColumns.min.js"></script>
+    
 
     <script>
 
@@ -106,7 +122,7 @@
                 if ($.fn.DataTable.isDataTable('#tablaProyeccion')) {
 
                     $('#tablaProyeccion').DataTable().destroy();
-                    
+                    // $('#tablaProyeccion').empty();
 
                     $('#tablaProyeccion thead').empty();
 
@@ -132,11 +148,12 @@
 
                     { title: "Item", data: "numIte",width:"90px" },
 
-                    { title: "Artículo", data: "codArt", width:"200px" },
+                    { title: "Artículo", data: "codArt", width:"100px" },
 
-                    { title: "Descripción", data: "desArt" },
+                    { title: "Descripción", data: "desArt", width: "100px" },
 
-                    { title: "Cantidad", data: "cantidad" }
+                    { title: "Cantidad", data: "cantidad", width: "90px" },
+                    { title: "Peso", data: "pesoUnitario", width: "90px" }
                 ];
 
                 // =========================================
@@ -165,6 +182,7 @@
                                     data-numdoc="${row.numDoc}"
                                     data-numite="${row.numIte}"
                                     data-peso="${row.pesoUnitario}"
+                                    data-original="${cantidad}"
                                 >
                                     ${cantidad}
                                 </div>
@@ -215,9 +233,9 @@
                     scrollX: true,
                     //Para fijar columnas
                     scrollCollapse: true,
-                    fixedColumns: {
-                        leftColumns:4
-                    },
+                    // fixedColumns: {
+                    //     left:6
+                    // },
 
                     destroy: true,
 
@@ -233,6 +251,9 @@
                             fechaDesde: $("#fechaDesde").val(),
 
                             fechaHasta: $("#fechaHasta").val(),
+
+                            saldoPP01Minimo:
+                            parseFloat($("#saldoPP01Minimo").val()) === "" ? null : parseFloat($("#saldoPP01Minimo").val()),
 
                             page: page,
 
@@ -286,7 +307,7 @@
 
                         let tr = $("<tr></tr>");
 
-                        tr.append("<th colspan='6' class='text-end'>TOTALES:</th>");
+                        tr.append("<th colspan='7' class='text-end'>TOTALES:</th>");
 
                         semanasGlobal.forEach(sem => {
 
@@ -370,11 +391,25 @@
 
                 let div = input.parent();
 
+                let valorOriginal = 
+                    parseFloat(div.data("original")) || 0;
+
                 let pesoUnitario =
                     parseFloat(div.data("peso")) || 0;
 
+                if (valorOriginal === nuevoValor)
+                {
+                    div.html(valorOriginal);
+
+                    return;
+                }
+
                 // volver a texto
                 div.html(nuevoValor);
+
+                //actualizar valor original
+                div.data("original",nuevoValor);
+
                 //para recalcular Footer
                 actualizarTotales();
 
@@ -405,15 +440,34 @@
                     cantidad: nuevoValor
                 };
 
-                cambios.push(item);
+                //Evitar duplicados
+                let index = cambios.findIndex(c =>
+                    c.codDoc === item.codDoc &&
+                    c.numDoc === item.numDoc &&
+                    c.numIte === item.numIte &&
+                    c.anio === item.anio &&
+                    c.semana === item.semana
+                );
+
+                if(index >=0)
+                {
+                    cambios[index] = item;
+                }
+                else {
+                    cambios.push(item);
+                }
+
+                // cambios.push(item);
 
                 div.css("background-color", "#fff3cd");
+                //Borrar despues
+                console.log(cambios);
             });
 
                 // =========================================
                 // ACTUALIZAR TOTALES
                 // =========================================
-                                  function actualizarTotales() {
+            function actualizarTotales() {
 
             let api = tabla;
 
@@ -460,6 +514,50 @@
                 indexFooter += 2;
                 });
             }
+
+            //==========================
+            //Guardado automatico en intervalo de tiempo
+            //=========================
+            function guardarCambiosAutomatico() {
+
+            if (cambios.length === 0)
+                return;
+
+            $.ajax({
+
+                url: '/Proyeccion/GuardarLote',
+
+                method: 'POST',
+
+                contentType: 'application/json',
+
+                data: JSON.stringify(cambios),
+
+                success: function () {
+
+                    console.log(
+                        "AutoGuardado: "
+                        + new Date().toLocaleTimeString()
+                    );
+
+                    $("#lblAutoSave").text(
+                        "Último guardado: "
+                        + new Date().toLocaleTimeString()
+                    );
+
+                    cambios = [];
+
+                    $(".celda-editable")
+                        .css("background-color", "");
+                },
+
+                error: function () {
+
+                    console.log("Error AutoGuardado");
+                }
+            });
+        }
+
 
             // =========================================
             // GUARDAR CAMBIOS

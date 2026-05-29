@@ -22,6 +22,8 @@ namespace PCPProyect.Models
         public string? Mod0 { get; set; }
         [Column("MOD1")]
         public string? Mod1 { get; set; }
+        [Column("MOD2")]
+        public DateTime? Mod2 { get; set; } // Se usara para guardarla fecha de la ultima modificacion, asi se puede llevar un control de cambios en el historial
         [Column("MOD3")]
         public string? Mod3 { get; set; }
         [Column("TIPEVE")]

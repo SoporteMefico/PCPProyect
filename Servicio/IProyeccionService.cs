@@ -139,6 +139,15 @@ namespace PCPProyect.Servicio
                     x.DesArt.Contains(buscar)
                 );
             }
+
+            // =========================================
+            // FILTRO SALDO PP01
+            // =========================================
+            if (filtro.SaldoPP01Minimo.HasValue)
+            {
+                query = query.Where(x =>
+                    x.SaldoPP01 > filtro.SaldoPP01Minimo);
+            }
             // =========================================
             // 5. TOTAL REGISTROS
             // =========================================
@@ -165,7 +174,8 @@ namespace PCPProyect.Servicio
                     DesArt = x.DesArt,
 
                     Cantot = x.Cantot,
-                    PesoUnitario = x.PesoUnitario
+                    PesoUnitario = x.PesoUnitario,
+                    SaldoPP01 = x.SaldoPP01
                 })
 
                 .ToListAsync();
@@ -312,15 +322,32 @@ namespace PCPProyect.Servicio
                     x.CodDoc == item.CodDoc &&
                     x.NumDoc == item.NumDoc &&
                     x.NumIte == item.NumIte &&
+                    x.TipEve == "OT01PCP001" &&
                     x.FecIniPro >= fecha.Date &&
                     x.FecIniPro < fecha.Date.AddDays(1)
                 );
 
+                //Eliminar proyeccion si se ingresa valor 0
+                if (item.Cantidad == 0)
+                {
+                    if (existente != null)
+                    {
+                        _context.MovHis00.Remove(existente);
+                    }
+                    continue; // saltar al siguiente item
+                }
+
+                //Actualizar proyeccion en semana ya existente
                 if (existente != null)
                 {
-                    existente.CantidadProyectada = item.Cantidad;
+                    if (existente.CantidadProyectada != item.Cantidad)
+                    {
+                        existente.Mod2 = DateTime.Now; // actualizar fecha del evento, se sabra ultima fecha actualizada
+                        existente.CantidadProyectada = item.Cantidad;
+                        existente.NomPc = System.Environment.MachineName;
+                    }
                 }
-                else
+                else //Insertar nueva proyeccion
                 {
                     _context.MovHis00.Add(new MovHis00
                     {
@@ -340,6 +367,7 @@ namespace PCPProyect.Servicio
                         EstEve = "PLANIFICACION",
                         Mod0 = "ProyectPCP",
                         Mod1 = "",
+                        Mod2 = DateTime.Now,
                         Mod3 = "OT01PCP001",
                         NomPc = System.Environment.MachineName
                     });

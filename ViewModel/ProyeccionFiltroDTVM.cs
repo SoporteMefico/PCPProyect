@@ -13,5 +13,6 @@
         public int Length { get; set; }
 
         public SearchVM Search { get; set; }
+        public decimal SaldoPP01Minimo { get; set; } = 0;
     }
 }

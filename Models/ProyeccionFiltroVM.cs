@@ -12,5 +12,6 @@
         public string TipCambio { get; set; } // opcional
 
         public string CodCliente { get; set; } // opcional
+        public decimal? SaldoPP01Minimo { get; set; }
     }
 }
