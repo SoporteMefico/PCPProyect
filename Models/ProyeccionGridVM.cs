@@ -4,11 +4,12 @@ namespace PCPProyect.Models
 {
     public class ProyeccionGridVM
     {
+        public string Pedido { get; set; }
         public string CodDoc { get; set; }
         public string NumDoc { get; set; }
 
         public string Cliente { get; set; }
-        public string Pedido { get; set; }
+
 
         public string NumIte { get; set; }
 

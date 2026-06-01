@@ -130,6 +130,7 @@ namespace PCPProyect.Servicio
 
                 query = query.Where(x =>
 
+                    x.Pedido.Contains(buscar) ||
                     x.NumDoc.Contains(buscar) ||
 
                     x.Cliente.Contains(buscar) ||
@@ -165,6 +166,7 @@ namespace PCPProyect.Servicio
                 .Take(filtro.PageSize)
                 .Select(x => new
                 {
+                    Pedido = x.Pedido,
                     CodDoc = x.CodDoc.Trim(),
                     NumDoc = x.NumDoc.Trim(),
                     NumIte = x.NumIte.Trim(),
@@ -187,6 +189,7 @@ namespace PCPProyect.Servicio
             {
                 var item = new ProyeccionGridVM
                 {
+                    Pedido = d.Pedido,
                     CodDoc = d.CodDoc,
                     NumDoc = d.NumDoc,
                     NumIte = d.NumIte,

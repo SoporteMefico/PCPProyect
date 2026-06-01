@@ -18,6 +18,9 @@
         <div class="col">
             <button id="btnBuscar" class="btn btn-primary">Buscar</button>
             <button id="btnGuardar" class="btn btn-success">Guardar cambios</button>
+            <div class="mt-2">
+                <small id="lblAutoSave" class="text-muted"> Sin guardar</small>
+            </div>
         </div>
 
     </div>
@@ -41,7 +44,19 @@
             <tr></tr>
         </tfoot>
     </table>
+
+
+    <div class="toast-container position-fixed top-0 end-0 p-3">
+        <div id="toastGuardado" class="toast text-white bg-success border-0" role="alert">
+            <div class="toast-body">
+                Proyeccion guardada automaticamente
+            </div>
+        </div>
+
+    </div>
+
 </div>
+
 
 @section Scripts {
 
@@ -65,6 +80,25 @@
 
                 construirTabla();
             });
+
+            setInterval( function(){
+                guardarCambiosAutomatico();
+
+            }, 15000);
+
+            window.addEventListener("beforeunload", function (e) {
+                if (cambios.length > 0) {
+                    
+                    e.preventDefault();
+                    e.returnValue = '';
+                }
+            });
+
+            function mostrarToast(mensaje){
+                $("#toastGuardado .toast-body").text(mensaje);
+                let toast = new bootstrap.Toast(document.getElementById('toastGuardado'));
+                toast.show();
+            }
 
             // =========================================
             // ISO WEEK
@@ -141,6 +175,7 @@
                 // COLUMNAS FIJAS
                 // =========================================
                 let columnas = [
+                    {title: "Pedido", data : "pedido", width: "120px" },
 
                     { title: "Cliente", data: "cliente", width: "220px" },
 
@@ -307,7 +342,7 @@
 
                         let tr = $("<tr></tr>");
 
-                        tr.append("<th colspan='7' class='text-end'>TOTALES:</th>");
+                        tr.append("<th colspan='8' class='text-end'>TOTALES:</th>");
 
                         semanasGlobal.forEach(sem => {
 
@@ -534,6 +569,7 @@
                 data: JSON.stringify(cambios),
 
                 success: function () {
+                    let cantidadGuardada = cambios.length;
 
                     console.log(
                         "AutoGuardado: "
@@ -549,6 +585,8 @@
 
                     $(".celda-editable")
                         .css("background-color", "");
+
+                    mostrarToast(cantidadGuardada + " Proyección guardada automáticamente");
                 },
 
                 error: function () {
@@ -571,26 +609,8 @@
                     return;
                 }
 
-                $.ajax({
-
-                    url: '/Proyeccion/GuardarLote',
-
-                    method: 'POST',
-
-                    contentType: 'application/json',
-
-                    data: JSON.stringify(cambios),
-
-                    success: function () {
-
-                        alert("Guardado correctamente");
-
-                        cambios = [];
-
-                        $(".celda-editable")
-                            .css("background-color", "");
-                    }
-                });
+                guardarCambiosAutomatico();
+                alert("Guardado correctamente");
             });
 
         });

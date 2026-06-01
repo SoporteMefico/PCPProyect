@@ -4,6 +4,7 @@ namespace PCPProyect.Models
 {
     public class VWProyeccionGrid
     {
+        public string Pedido { get; set; }
         public string CodDoc { get; set; }
 
         public string NumDoc { get; set; }
