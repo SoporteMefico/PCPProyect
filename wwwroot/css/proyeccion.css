@@ -1,41 +1,111 @@
-﻿th,
-td {
-    white-space: nowrap;
+﻿
+.titulo-proyeccion {
+    font-size: 20px;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 15px;
+    
 }
 
-/* Fondo real columnas congeladas */
-.dtfc-fixed-left,
-.dtfc-fixed-start {
-    background-color: white !important;
+.panel-filtros {
+    background: white;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 10px rgba(0,0,0,.08);
 }
 
-    .dtfc-fixed-left table,
-    .dtfc-fixed-start table {
-        background-color: white !important;
-    }
-
-    /* Header */
-    .dtfc-fixed-left thead th,
-    .dtfc-fixed-start thead th {
-        background: #f8f9fa !important;
-        z-index: 3 !important;
-    }
-
-    /* Body */
-    .dtfc-fixed-left tbody td,
-    .dtfc-fixed-start tbody td {
-        background: white !important;
-    }
-
-    /* Footer */
-    .dtfc-fixed-left tfoot th,
-    .dtfc-fixed-start tfoot th {
-        background: #f8f9fa !important;
-    }
-
-/* Sombra separación */
-.dtfc-fixed-left,
-.dtfc-fixed-start {
-    box-shadow: 2px 0 5px rgba(0,0,0,.10);
+.btn-primary,
+.btn-success {
+    min-width: 140px;
+}
+.btn-success {
+    font-weight: 600;
 }
 
+/*#tablaProyeccion tbody {
+    font-size: 12px;
+}*/
+
+#tablaProyeccion tbody tr:hover {
+    background-color: #f3f4f6;
+    
+}
+
+.celda-editable {
+    cursor: pointer;
+    min-height: 28px;
+    text-align: center;
+}
+
+    .celda-editable:hover {
+        background: #dbeafe;
+    }
+.celda-modificada {
+    background-color: #fff3cd !important;
+    font-weight: bold;
+}
+
+#tablaProyeccion tfoot th {
+    background: #e5e7eb;
+    font-weight: bold;
+    text-align: right;
+    border-top: 2px solid #6b7280;
+}
+
+.input-edicion {
+    text-align: center;
+    font-weight: bold;
+}
+
+
+.contenedor-proyeccion {
+    background: #f8fafc;
+    padding: 20px;
+    border-radius: 12px;
+    overflow: visible;
+}
+
+
+/* Fondo para columnas fijas */
+/* Columnas fijas - asegura visibilidad sobre el scroll */
+/*table.dataTable tbody tr td.dtfc-fixed-left,
+table.dataTable thead tr th.dtfc-fixed-left,
+table.dataTable tfoot tr td.dtfc-fixed-left,
+table.dataTable tfoot tr th.dtfc-fixed-left {
+    background-color: #fff;
+    z-index: 3 !important;
+    position: sticky !important;*/ /* ← clave */
+/*}*/
+
+/* Sombra separadora visual */
+/*.dtfc-right-top-blocker,
+table.dataTable tbody tr td.dtfc-fixed-left:last-child,
+table.dataTable thead tr th.dtfc-fixed-left:last-child {
+    box-shadow: 4px 0 6px -2px rgba(0, 0, 0, 0.15);
+}*/
+
+
+/* El contenedor principal del scroll debe estar encima */
+/*.dataTables_scrollBody {
+    z-index: 1;
+    position: relative;
+}
+
+.dataTables_length,
+.dataTables_filter,
+.dataTables_info,
+.dataTables_paginate {
+    position: relative;
+    z-index: 10;
+}
+
+.dtfixedcolumns-left {
+    pointer-events: none;
+    z-index: 2;
+}
+
+.dtfixedcolumns-left td,
+.dtfixedcolumns-left th {
+    pointer-events: all;
+}*/

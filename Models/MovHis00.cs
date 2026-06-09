@@ -12,6 +12,7 @@ namespace PCPProyect.Models
         public DateTime FechaHis { get; set; }
 
         public DateTime? FecIniPro { get; set; }
+        public DateTime? FecFinPro { get; set; }
 
         public DateTime? FecDoc { get; set; }
         [Column("DESHIS")]

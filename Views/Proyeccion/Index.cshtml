@@ -1,30 +1,48 @@
 ﻿<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
 <link rel="stylesheet"
-      href="https://cdn.datatables.net/fixedcolumns/4.3.0/css/fixedColumns.dataTables.min.css" />
+      href="https://cdn.datatables.net/fixedcolumns/4.3.0/css/fixedColumns.dataTables.min.css" /> 
+
+@* <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
+<link rel="stylesheet" href="https://cdn.datatables.net/fixedcolumns/4.3.0/css/fixedColumns.bootstrap5.min.css" /> *@
 
 <link rel="stylesheet" href="~/css/proyeccion.css"/>
 
-<div class="container-fluid">
-    <h4>Proyección por Semanas</h4>
+<div class="container-fluid contenedor-proyeccion">
+    <h4 class="titulo-proyeccion">Proyección por Semanas</h4>
 
-    <div class="row mb-3">
-        <div class="col">
+    <div class="row panel-filtros">
+        <div class="col-3">
             <input type="date" id="fechaDesde" class="form-control" />
         </div>
-        <div class="col">
+        <div class="col-3">
             <input type="date" id="fechaHasta" class="form-control" />
            
         </div>
-        <div class="col">
+        <div class="col-1">
             <button id="btnBuscar" class="btn btn-primary">Buscar</button>
+           
+        </div>
+        <div class="col-2">
             <button id="btnGuardar" class="btn btn-success">Guardar cambios</button>
             <div class="mt-2">
                 <small id="lblAutoSave" class="text-muted"> Sin guardar</small>
             </div>
         </div>
+        @* <label>Saldo PP01 Mayor a</label> *@
+        <div class="col-3">  
+            @* <label>Saldo PP01 Mayor a</label> *@
+            <div class="form-floating">
+                <input type="number"
+                       id="saldoPP01Minimo"
+                       class="form-control"
+                       value="0" />
+                <label for="saldoPP01Minimo">Saldo mayor a</label>
+            </div>
+            
+        </div>
 
     </div>
-    <div class="col-md-2">
+    @* <div class="col-md-2">
 
         <label>Saldo PP01 Mayor a</label>
 
@@ -33,7 +51,7 @@
                class="form-control"
                value="0" />
 
-    </div>
+    </div> *@
 
    
 
@@ -61,559 +79,24 @@
 @section Scripts {
 
     <!-- DataTables -->
+    @* <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script> *@
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/fixedcolumns/4.3.0/js/dataTables.fixedColumns.min.js"></script>
-    
+     <script src="https://cdn.datatables.net/fixedcolumns/4.3.0/js/dataTables.fixedColumns.min.js"></script>
+    @* < script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.datatables.net/fixedcolumns/4.3.0/js/dataTables.fixedColumns.min.js"></script> *@
 
-    <script>
+    <script src="~/js/proyeccion/proyeccion.js"></script>
 
-        $(document).ready(function () {
+    <script src="~/js/proyeccion/semanas.js"></script>
 
-            let tabla;
-            let semanasGlobal = [];
-            let cambios = [];
+    <script src="~/js/proyeccion/toast.js"></script>
 
-            // =========================================
-            // BUSCAR
-            // =========================================
-            $("#btnBuscar").click(function () {
+    <script src="~/js/proyeccion/totales.js"></script>
 
-                construirTabla();
-            });
+    <script src="~/js/proyeccion/editable.js"></script>
 
-            setInterval( function(){
-                guardarCambiosAutomatico();
+    <script src="~/js/proyeccion/autosave.js"></script>
 
-            }, 15000);
+    <script src="~/js/proyeccion/datatable.js"></script>
 
-            window.addEventListener("beforeunload", function (e) {
-                if (cambios.length > 0) {
-                    
-                    e.preventDefault();
-                    e.returnValue = '';
-                }
-            });
-
-            function mostrarToast(mensaje){
-                $("#toastGuardado .toast-body").text(mensaje);
-                let toast = new bootstrap.Toast(document.getElementById('toastGuardado'));
-                toast.show();
-            }
-
-            // =========================================
-            // ISO WEEK
-            // =========================================
-            function getISOWeek(date) {
-
-                let d = new Date(Date.UTC(
-                    date.getFullYear(),
-                    date.getMonth(),
-                    date.getDate()
-                ));
-
-                let dayNum = d.getUTCDay() || 7;
-
-                d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-
-                let yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-
-                return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-            }
-
-            // =========================================
-            // GENERAR SEMANAS
-            // =========================================
-            function generarSemanas(desde, hasta) {
-
-                let semanas = [];
-
-                let fecha = new Date(desde);
-
-                while (fecha <= new Date(hasta)) {
-
-                    let anio = fecha.getFullYear();
-
-                    let semana = getISOWeek(fecha);
-
-                    let key = `${anio}-W${semana}`;
-
-                    if (!semanas.includes(key)) {
-                        semanas.push(key);
-                    }
-
-                    fecha.setDate(fecha.getDate() + 7);
-                }
-
-                return semanas;
-            }
-
-            // =========================================
-            // CONSTRUIR TABLA
-            // =========================================
-            function construirTabla() {
-
-                // destruir tabla anterior
-                if ($.fn.DataTable.isDataTable('#tablaProyeccion')) {
-
-                    $('#tablaProyeccion').DataTable().destroy();
-                    // $('#tablaProyeccion').empty();
-
-                    $('#tablaProyeccion thead').empty();
-
-                    $('#tablaProyeccion tbody').empty();
-
-                    $('#tablaProyeccion tfoot').html('<tr></tr>');
-                }
-
-                let desde = $("#fechaDesde").val();
-
-                let hasta = $("#fechaHasta").val();
-
-                semanasGlobal = generarSemanas(desde, hasta);
-
-                // =========================================
-                // COLUMNAS FIJAS
-                // =========================================
-                let columnas = [
-                    {title: "Pedido", data : "pedido", width: "120px" },
-
-                    { title: "Cliente", data: "cliente", width: "220px" },
-
-                    { title: "Documento", data: "numDoc", width:"120px" },
-
-                    { title: "Item", data: "numIte",width:"90px" },
-
-                    { title: "Artículo", data: "codArt", width:"100px" },
-
-                    { title: "Descripción", data: "desArt", width: "100px" },
-
-                    { title: "Cantidad", data: "cantidad", width: "90px" },
-                    { title: "Peso", data: "pesoUnitario", width: "90px" }
-                ];
-
-                // =========================================
-                // COLUMNAS DINÁMICAS
-                // =========================================
-                semanasGlobal.forEach(sem => {
-
-                    // cantidad
-                    columnas.push({
-
-                        title: sem + " CANT",
-
-                        data: null,
-
-                        render: function (data, type, row) {
-
-                            let info = row.semanas[sem];
-
-                            let cantidad = info ? info.cantidad : 0;
-
-                            return `
-                                <div
-                                    class="celda-editable"
-                                    data-semana="${sem}"
-                                    data-coddoc="${row.codDoc}"
-                                    data-numdoc="${row.numDoc}"
-                                    data-numite="${row.numIte}"
-                                    data-peso="${row.pesoUnitario}"
-                                    data-original="${cantidad}"
-                                >
-                                    ${cantidad}
-                                </div>
-                            `;
-                        }
-                    });
-
-                    // peso
-                    columnas.push({
-
-                        title: sem + " PESO",
-
-                        data: null,
-
-                        render: function (data, type, row) {
-
-                            let info = row.semanas[sem];
-
-                            let peso = info ? info.peso : 0;
-
-                            return `
-                                <div class="text-end fw-bold peso-semana">
-                                    ${parseFloat(peso).toFixed(2)}
-                                </div>
-                            `;
-                        }
-                    });
-                });
-
-                // =========================================
-                // DATATABLE
-                // =========================================
-                tabla = $("#tablaProyeccion").DataTable({
-
-                    processing: true,
-
-                    serverSide: true,
-
-                    searching: true,
-
-                    paging: true,
-
-                    pageLength: 10,
-                    autoWidth: false,
-
-                    lengthMenu: [10, 25, 50, 100],
-
-                    scrollX: true,
-                    //Para fijar columnas
-                    scrollCollapse: true,
-                    // fixedColumns: {
-                    //     left:6
-                    // },
-
-                    destroy: true,
-
-                    deferRender: true,
-
-                    ajax: function (dtParams, callback, settings) {
-
-                        let page =
-                            (dtParams.start / dtParams.length) + 1;
-
-                        let filtro = {
-
-                            fechaDesde: $("#fechaDesde").val(),
-
-                            fechaHasta: $("#fechaHasta").val(),
-
-                            saldoPP01Minimo:
-                            parseFloat($("#saldoPP01Minimo").val()) === "" ? null : parseFloat($("#saldoPP01Minimo").val()),
-
-                            page: page,
-
-                            pageSize: dtParams.length,
-
-                            buscar: dtParams.search.value
-                        };
-
-                        $.ajax({
-
-                            url: '/Proyeccion/ObtenerGrid',
-
-                            method: 'POST',
-
-                            contentType: 'application/json',
-
-                            data: JSON.stringify(filtro),
-
-                            success: function (resp) {
-
-                                callback({
-
-                                    draw: dtParams.draw,
-
-                                    recordsTotal: resp.total,
-
-                                    recordsFiltered: resp.total,
-
-                                    data: resp.data
-                                });
-                            },
-
-                            error: function (xhr) {
-
-                                console.log(xhr);
-
-                                alert("Error cargando datos");
-                            }
-                        });
-                    },
-
-                    columns: columnas,
-
-                        footerCallback: function (row, data) {
-
-                        let api = this.api();
-
-                        let footer = $(api.table().footer());
-
-                        footer.empty();
-
-                        let tr = $("<tr></tr>");
-
-                        tr.append("<th colspan='8' class='text-end'>TOTALES:</th>");
-
-                        semanasGlobal.forEach(sem => {
-
-                            let totalCantidad = 0;
-
-                            let totalPeso = 0;
-
-                            data.forEach(row => {
-
-                                let info = row.semanas[sem];
-
-                                if (info) {
-
-                                    totalCantidad += parseFloat(info.cantidad || 0);
-
-                                    totalPeso += parseFloat(info.peso || 0);
-                                }
-                            });
-
-                            tr.append(`
-                                <th class="text-end">
-                                    ${totalCantidad.toFixed(2)}
-                                </th>
-                            `);
-
-                            tr.append(`
-                                <th class="text-end">
-                                    ${totalPeso.toFixed(2)}
-                                </th>
-                            `);
-                        });
-
-                        footer.append(tr);
-                        //Para que actualice en cada busqueda o guardado?
-                        actualizarTotales();
-                    }
-                });
-
-                tabla.on('draw', function () {
-
-                    actualizarTotales();
-                });
-            }
-
-            // =========================================
-            // DOBLE CLICK PARA EDITAR
-            // =========================================
-            $(document).on("dblclick", ".celda-editable", function () {
-
-                let div = $(this);
-
-                if (div.find("input").length > 0)
-                    return;
-
-                let valor = div.text().trim();
-
-                let input = $(`
-                    <input
-                        type="number"
-                        class="form-control input-edicion"
-                        value="${valor}"
-                    />
-                `);
-
-                div.html(input);
-
-                input.focus();
-
-                input.select();
-            });
-
-            // =========================================
-            // GUARDAR EDICIÓN
-            // =========================================
-            $(document).on("blur", ".input-edicion", function () {
-
-                let input = $(this);
-
-                let nuevoValor =
-                    parseFloat(input.val()) || 0;
-
-                let div = input.parent();
-
-                let valorOriginal = 
-                    parseFloat(div.data("original")) || 0;
-
-                let pesoUnitario =
-                    parseFloat(div.data("peso")) || 0;
-
-                if (valorOriginal === nuevoValor)
-                {
-                    div.html(valorOriginal);
-
-                    return;
-                }
-
-                // volver a texto
-                div.html(nuevoValor);
-
-                //actualizar valor original
-                div.data("original",nuevoValor);
-
-                //para recalcular Footer
-                actualizarTotales();
-
-                // actualizar peso
-                let tdCantidad = div.closest("td");
-
-                let tdPeso = tdCantidad.next();
-
-                tdPeso.find(".peso-semana")
-                    .html((nuevoValor * pesoUnitario).toFixed(2));
-
-                let semanaStr = div.data("semana");
-
-                let partes = semanaStr.split("-W");
-
-                let item = {
-
-                    codDoc: div.data("coddoc"),
-
-                    numDoc: div.data("numdoc"),
-
-                    numIte: div.data("numite"),
-
-                    anio: parseInt(partes[0]),
-
-                    semana: parseInt(partes[1]),
-
-                    cantidad: nuevoValor
-                };
-
-                //Evitar duplicados
-                let index = cambios.findIndex(c =>
-                    c.codDoc === item.codDoc &&
-                    c.numDoc === item.numDoc &&
-                    c.numIte === item.numIte &&
-                    c.anio === item.anio &&
-                    c.semana === item.semana
-                );
-
-                if(index >=0)
-                {
-                    cambios[index] = item;
-                }
-                else {
-                    cambios.push(item);
-                }
-
-                // cambios.push(item);
-
-                div.css("background-color", "#fff3cd");
-                //Borrar despues
-                console.log(cambios);
-            });
-
-                // =========================================
-                // ACTUALIZAR TOTALES
-                // =========================================
-            function actualizarTotales() {
-
-            let api = tabla;
-
-            let footer = $(api.table().footer());
-
-            let ths = footer.find("th");
-
-            let indexFooter = 1;
-
-            semanasGlobal.forEach(sem => {
-
-                let totalCantidad = 0;
-
-                let totalPeso = 0;
-
-                // SOLO FILAS VISIBLES/FILTRADAS
-                api.rows({ search: 'applied' }).every(function () {
-
-                    let rowNode = this.node();
-
-                    let celda =
-                        $(rowNode).find(`.celda-editable[data-semana='${sem}']`);
-
-                    if (celda.length > 0) {
-
-                        let cantidad =
-                            parseFloat(celda.text().trim()) || 0;
-
-                        let pesoUnitario =
-                            parseFloat(celda.data("peso")) || 0;
-
-                        totalCantidad += cantidad;
-
-                        totalPeso += cantidad * pesoUnitario;
-                    }
-                });
-
-                $(ths[indexFooter])
-                    .text(totalCantidad.toFixed(2));
-
-                $(ths[indexFooter + 1])
-                    .text(totalPeso.toFixed(2));
-
-                indexFooter += 2;
-                });
-            }
-
-            //==========================
-            //Guardado automatico en intervalo de tiempo
-            //=========================
-            function guardarCambiosAutomatico() {
-
-            if (cambios.length === 0)
-                return;
-
-            $.ajax({
-
-                url: '/Proyeccion/GuardarLote',
-
-                method: 'POST',
-
-                contentType: 'application/json',
-
-                data: JSON.stringify(cambios),
-
-                success: function () {
-                    let cantidadGuardada = cambios.length;
-
-                    console.log(
-                        "AutoGuardado: "
-                        + new Date().toLocaleTimeString()
-                    );
-
-                    $("#lblAutoSave").text(
-                        "Último guardado: "
-                        + new Date().toLocaleTimeString()
-                    );
-
-                    cambios = [];
-
-                    $(".celda-editable")
-                        .css("background-color", "");
-
-                    mostrarToast(cantidadGuardada + " Proyección guardada automáticamente");
-                },
-
-                error: function () {
-
-                    console.log("Error AutoGuardado");
-                }
-            });
-        }
-
-
-            // =========================================
-            // GUARDAR CAMBIOS
-            // =========================================
-            $("#btnGuardar").click(function () {
-
-                if (cambios.length === 0) {
-
-                    alert("No hay cambios");
-
-                    return;
-                }
-
-                guardarCambiosAutomatico();
-                alert("Guardado correctamente");
-            });
-
-        });
-
-    </script>
 }

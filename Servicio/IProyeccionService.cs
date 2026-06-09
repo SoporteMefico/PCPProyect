@@ -299,6 +299,7 @@ namespace PCPProyect.Servicio
 
                     FechaHis = DateTime.Now, // evento
                     FecIniPro = fechaInicioSemana, // fechaProgramacion
+                    FecFinPro = fechaInicioSemana,
 
                     CantidadProyectada = dto.Cantidad,
 
@@ -360,6 +361,7 @@ namespace PCPProyect.Servicio
                         NumIte = item.NumIte,
                         NumIte1 = "",
                         FecIniPro = fecha,
+                        FecFinPro = fecha,
                         CantidadProyectada = item.Cantidad,
                         FechaHis = DateTime.Now,
                         DesHis = "PLANIFICACION del doc. OT01 - " + item.NumDoc,
